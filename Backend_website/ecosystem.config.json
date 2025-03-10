@@ -1,0 +1,17 @@
+{
+  "apps": [
+    {
+      "name": "app-production",
+      "script": "index.js",
+      "instances": 1,
+      "autorestart": true,
+      "watch": false,
+      "time": true,
+      "env": {
+        "NODE_ENV": "production",
+        "PORT":1337,
+        "MONGODB_URL": "mongodb://yimyim:HOyee0521@127.0.0.1:27017/odots?authSource=admin"
+      }
+    }
+  ]
+}

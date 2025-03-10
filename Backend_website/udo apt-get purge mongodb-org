@@ -1,0 +1,10 @@
+[0;1;31m×[0m mongod.service - MongoDB Database Server
+     Loaded: loaded (]8;;file://ubuntu-s-1vcpu-2gb-sgp1-01/usr/lib/systemd/system/mongod.service/usr/lib/systemd/system/mongod.service]8;;; [0;1;38:5:185mdisabled[0m; preset: [0;1;32menabled[0m)
+     Active: [0;1;31mfailed[0m (Result: exit-code) since Wed 2025-02-05 06:59:11 UTC; 6s ago
+   Duration: 188ms
+ Invocation: 555776f3940a475ba346696e68bf6f16
+       Docs: ]8;;https://docs.mongodb.org/manualhttps://docs.mongodb.org/manual]8;;
+    Process: 19179 ExecStart=/usr/bin/mongod --config /etc/mongod.conf [0;1;31m(code=exited, status=48)[0m
+   Main PID: 19179 (code=exited, status=48)
+   Mem peak: 42.1M
+        CPU: 108ms
