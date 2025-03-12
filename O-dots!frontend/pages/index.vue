@@ -15,6 +15,8 @@
       <section class="page page1 active">
           <div class="pagewrapper page1wrapper">
             <div class="upper">
+              <!-- Conditionally render the SearchBar component -->
+              <SearchBar v-if="showSearchBar" />
               <video autoplay muted loop>
                 <source src="/video/full-width.mp4" type="video/mp4">
               </video>
@@ -33,6 +35,7 @@
                     <span>Explore More>></span>
                   </div>
                       <Crowdfund />
+                      <HeroBanner />
                 </div>
                 <div class="page1loopbox page1loopbox4">
                       <h2>Cover your favourite</h2>
@@ -159,9 +162,7 @@
           <div class="middle">
             <div>
               <h4>My Pocket</h4>
-              
             </div>
-
             <div class="loopbox">
               <!-- Clip boxes here -->
             </div>
@@ -181,6 +182,7 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted } from 'vue';
 import gsap from 'gsap';
@@ -189,10 +191,7 @@ import Swipercarouselclean from '~/components/Swipercarouselclean.vue';
 import Swipercarouselsub from '~/components/Swipercarouselsub.vue';
 import Crowdfund from '~/components/Crowdfund.vue';
 import newbies from '~/components/newbies.vue';
-
-
-
-
+import SearchBar from '~/components/SearchBar.vue';
 
 const session = useSession();
 const router = useRouter();
@@ -210,6 +209,7 @@ const uploadingUserIcon = ref(false);
 const fileInput = ref(null);
 const isEditing = ref(false);
 const paidProducts = ref([]);
+const showSearchBar = ref(false); // New property to control visibility of SearchBar
 
 const fetchUserData = async () => {
   try {
@@ -224,7 +224,6 @@ const fetchUserData = async () => {
     if (data.user.userIcon) {
       userIcon.value = data.user.userIcon;
     }
-
   } catch (error) {
     console.error('Error fetching user data:', error);
     router.push('/users/signin');
@@ -245,7 +244,6 @@ const fetchUserPayments = async () => {
 
     if (response.ok) {
       const payments = await response.json();
-      
       paidProducts.value = payments;
     } else {
       const error = await response.json();
@@ -401,6 +399,7 @@ onMounted(() => {
           document.querySelectorAll('.page').forEach(page => {
             if (!page.classList.contains('page1')) page.classList.remove('active');
           });
+          showSearchBar.value = true; // Set showSearchBar to true after loading animation
         },
       }
     );

@@ -171,6 +171,12 @@ onMounted(fetchUserData);
   .loginmsg a {
     font-size: 0.7em;
   }
+  ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      margin-top: -15%!important;
+  }
 }
 </style>
 

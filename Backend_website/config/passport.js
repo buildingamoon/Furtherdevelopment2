@@ -29,7 +29,7 @@ passport.use(new LocalStrategy(
 
 const jwtOptions = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-  secretOrKey: config.jwt.secret,
+  secretOrKey: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here',
 };
 
 passport.use(new JwtStrategy(jwtOptions, async (jwtPayload, done) => {

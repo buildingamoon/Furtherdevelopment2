@@ -6,21 +6,54 @@ const authorize = require('../middlewares/authorize');
 
 const router = express.Router();
 
-router.post('/courses', courseController.createCourse);
-router.get('/courses', courseController.getCourses);
-router.post('/imageupload',imageuploadController.imageupload);
-router.get('/courses/protected',
-  passport.authenticate('jwt', { session: false }),
-  courseController.getCourses
+// Course approval system routes must come BEFORE /:id routes to avoid being treated as IDs
+router.get('/pending-courses', 
+  passport.authenticate('jwt', { session: false }), 
+  authorize(['admin']), 
+  courseController.getPendingCourses
 );
-router.get('/courses/protectedadmin',
-  passport.authenticate('jwt', { session: false }),
-  authorize(['admin']),
-  courseController.getCourses
+
+// Course creation and management
+router.post('/', 
+  passport.authenticate('jwt', { session: false }), 
+  courseController.createCourse
 );
-router.get('/courses/:id', courseController.getCourse);
-router.put('/courses/:id', courseController.updateCourse);
-router.delete('/courses/:id', courseController.deleteCourse);
+
+router.get('/', courseController.getCourses);
+
+router.get('/my-courses', 
+  passport.authenticate('jwt', { session: false }), 
+  courseController.getMyCourses
+);
+
 router.get('/categories', courseController.getCategories);
+
+// These routes must come after the specific routes
+router.get('/:id', courseController.getCourse);
+
+router.put('/:id/approve', 
+  passport.authenticate('jwt', { session: false }), 
+  authorize(['admin']), 
+  courseController.approveCourse
+);
+
+router.put('/:id/disapprove', 
+  passport.authenticate('jwt', { session: false }), 
+  authorize(['admin']), 
+  courseController.disapproveCourse
+);
+
+router.put('/:id', 
+  passport.authenticate('jwt', { session: false }), 
+  courseController.updateCourse
+);
+
+router.delete('/:id', 
+  passport.authenticate('jwt', { session: false }), 
+  courseController.deleteCourse
+);
+
+// Utility routes
+router.post('/imageupload', imageuploadController.imageupload);
 
 module.exports = router;

@@ -1,10 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { searchContent } = require('../controllers/searchController');
-const passport = require('passport');
-const authorize = require('../middlewares/authorize');
 
-// Define the search route
-router.get('/search', searchContent);
+// Search route that handles both posts and courses
+router.get('/', searchContent);
 
 module.exports = router;

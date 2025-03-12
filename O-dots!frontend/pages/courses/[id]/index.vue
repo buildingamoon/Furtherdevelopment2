@@ -1,377 +1,546 @@
 <template>
   <courseheader/>
-  <div class="coursedetailswhole">
-    <div class="addedlayer" v-if="course">
-      <div class="course-container">
-        <div class="course-left">
-          <div v-if="course.promotionUrl" class="mediawrapper">
-            <iframe :src="`${course.promotionUrl}?autoplay=1`" width="100%" height="100%" frameborder="0" allow="autoplay" allowfullscreen muted></iframe>
-          </div>
-          <div v-else class="mediawrapper">
-            <img :src="course.photos[0]" alt="Course Photo" width="100%" height="100%" />
-          </div>
-          <h3>Title: {{ course.title }}</h3>
+  <div class="course-details">
+    <!-- Hero Section -->
+    <div class="hero-section" :style="course?.photos?.[0] ? { backgroundImage: `url(${course.photos[0]})` } : null">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="container">
           <div class="course-info">
-            <div class="tutor">Tutor: {{ course.tutor }}</div>
-            <div class="categories">
-              <span v-for="category in course.categories" :key="category" class="category">
+            <div class="course-categories">
+              <span v-for="category in course?.categories" :key="category" class="category-tag">
                 {{ category }}
               </span>
             </div>
-          </div>
-          <div class="toname">
-            <br>
-            <p>Course Description</p>
-            <div class="coursedescription">
-              <p>{{ course.description }}</p>
+            <h1 class="course-title">{{ course?.title }}</h1>
+            <div class="course-meta">
+              <div class="tutor-info" v-if="course?.tutor">
+                <img :src="tutorIcon" alt="Tutor" class="tutor-avatar">
+                <span class="tutor-name">{{ course?.tutor?.name }}</span>
+              </div>
+              <div class="course-stats">
+                <div class="stat">
+                  <i class="fas fa-users"></i>
+                  <span>{{ enrolledCount }} students</span>
+                </div>
+                <div class="stat">
+                  <i class="fas fa-clock"></i>
+                  <span>{{ course?.duration }} hours</span>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        <div class="course-right">
-          <div v-if="course.photos.length" v-for="photo in course.photos" :key="photo">
-            <img :src="photo" alt="Course Photo" class="course-photo">
-          </div>
-          <div v-if="course.Price !== null && course.Price !== 0">
-            <h3>Price: ${{ formatPrice(course.Price) }}</h3>
-            <button @click="redirectToStripe">Buy it now</button>
-          </div>
-          <div v-else>
-            <button @click="watchItNow">Watch it now</button>
           </div>
         </div>
       </div>
     </div>
-    <div v-else>
-      <h2>Course not found</h2>
-      <p>We couldn't find the course you're looking for. Please check the URL or try again later.</p>
+
+    <!-- Main Content -->
+    <div class="main-content">
+      <div class="container">
+        <div class="content-grid">
+          <!-- Left Column -->
+          <div class="course-content">
+            <!-- Course Description -->
+            <section class="content-section">
+              <h2>Course Description</h2>
+              <div class="description" v-html="course?.description"></div>
+            </section>
+
+            <!-- What You'll Learn -->
+            <section class="content-section">
+              <h2>What You'll Learn</h2>
+              <div class="learning-outcomes" v-html="course?.learningOutcomes"></div>
+            </section>
+
+            <!-- Course Curriculum -->
+            <section class="content-section">
+              <h2>Course Curriculum</h2>
+              <div class="curriculum-list">
+                <div v-for="(video, index) in course?.videos" :key="index" class="curriculum-item">
+                  <div class="item-header">
+                    <span class="item-number">{{ index + 1 }}</span>
+                    <span class="item-title">{{ video.name }}</span>
+                    <span class="item-duration">{{ video.duration || '00:00' }}</span>
+                  </div>
+                  <p class="item-description">{{ video.tutorremarks }}</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- Right Column -->
+          <div class="course-sidebar">
+            <div class="sidebar-card">
+              <!-- Preview Video -->
+              <div v-if="course?.promotionUrl" class="preview-video">
+                <iframe 
+                  :src="course.promotionUrl" 
+                  frameborder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <div v-else-if="course?.photos?.[0]" class="preview-image">
+                <img :src="course.photos[0]" alt="Course Preview">
+              </div>
+
+              <!-- Course Price -->
+              <div class="price-section">
+                <div class="price" v-if="course?.Price">
+                  <span class="currency">HK$</span>
+                  <span class="amount">{{ formatPrice(course.Price) }}</span>
+                </div>
+                <div class="price-actions">
+                  <button @click="redirectToStripe" class="btn-primary">
+                    Enroll Now
+                  </button>
+                  <button @click="addToWishlist" class="btn-secondary" :disabled="isInWishlist">
+                    {{ isInWishlist ? 'In Wishlist' : 'Add to Wishlist' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Course Stats -->
+              <div class="course-highlights">
+                <div class="highlight-item">
+                  <i class="fas fa-play-circle"></i>
+                  <div class="highlight-info">
+                    <span class="highlight-value">{{ course?.videos?.length || 0 }}</span>
+                    <span class="highlight-label">Lessons</span>
+                  </div>
+                </div>
+                <div class="highlight-item">
+                  <i class="fas fa-clock"></i>
+                  <div class="highlight-info">
+                    <span class="highlight-value">{{ course?.duration || 0 }}</span>
+                    <span class="highlight-label">Hours</span>
+                  </div>
+                </div>
+                <div class="highlight-item">
+                  <i class="fas fa-infinity"></i>
+                  <div class="highlight-info">
+                    <span class="highlight-value">Lifetime</span>
+                    <span class="highlight-label">Access</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { loadStripe } from '@stripe/stripe-js';
 import { useRuntimeConfig } from '#imports';
-import { useSession } from '@/composables/state';
+import { loadStripe } from '@stripe/stripe-js';
 
-const session = useSession();
-const userData = ref({});
 const route = useRoute();
 const router = useRouter();
-
-const name = ref('');
-const email = ref('');
-const course = ref(null); // Initialize course as a reactive reference
 const runtimeConfig = useRuntimeConfig();
 
-const fetchUserProfile = async () => {
-    try {
-        const token = localStorage.getItem('token');
-        console.log('Token:', token); // Log the token
-        if (!token) {
-            throw new Error('No token available');
-        }
-        const response = await fetch(runtimeConfig.public.apiBase + 'auth/profile', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`, // Include token if needed
-            },
-        });
+const course = ref(null);
+const tutorIcon = ref('/public/picture/inner.jpg');
+const enrolledCount = ref(Math.floor(Math.random() * 1000) + 100);
+const isInWishlist = ref(false);
 
-        const data = await response.json(); // Store user data
-        console.log('Fetched user profile data:', data); // Log the fetched data
-
-        userData.value = data;
-        if (data) {
-            name.value = data.user.name; // Update reactive reference
-            email.value = data.user.email; // Update reactive reference
-            console.log('Name after fetch:', name.value); // Log the name
-            console.log('Email after fetch:', email.value); // Log the email
-        } else {
-            console.error('No user data found');
-        }
-
-    } catch (error) {
-        console.error('Error fetching user profile:', error);
-    }
+const formatPrice = (price) => {
+  return (price / 100).toFixed(2);
 };
 
-const course_id = ref('');
-const courseId = ref(route.params.id);
+const addToWishlist = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/users/signin');
+      return;
+    }
+
+    // Add to wishlist in localStorage
+    const wishlist = JSON.parse(localStorage.getItem('courseWishlist') || '[]');
+    if (!wishlist.includes(course.value._id)) {
+      wishlist.push(course.value._id);
+      localStorage.setItem('courseWishlist', JSON.stringify(wishlist));
+      isInWishlist.value = true;
+      alert('Course added to wishlist!');
+    }
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    alert('Failed to add course to wishlist');
+  }
+};
 
 const redirectToStripe = async () => {
   try {
-    console.log('Redirecting to Stripe...');
-    console.log('Email before request:', email.value); // Log the email before request
-    console.log('Name before request:', name.value);   // Log the name before request
-    console.log('Course ID before request:', courseId.value); // Log the course ID before request
-
-    // Ensure course_id is updated with courseId.value
-    course_id.value = courseId.value;
-
-    // Create customer and await the response
-    const response = await fetch(`${runtimeConfig.public.apiBase}payments/create-customer`, {
-      method: "POST",
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // Include token if needed
-      },
-      body: JSON.stringify({
-        email: email.value,
-        name: name.value,
-        course_id: course_id.value, // Use course_id.value
-      })
-    });
-
-    const customerData = await response.json();
-    if (!response.ok) {
-      throw new Error('Error creating customer: ' + (customerData.message || response.statusText));
+    const token = localStorage.getItem('token');
+    if (!token) {
+      router.push('/users/signin');
+      return;
     }
 
-    console.log('Customer created:', customerData); // Log the customer data
-
-    // Proceed to create checkout session only if customer creation was successful
-    const checkoutResponse = await fetch(`${runtimeConfig.public.apiBase}payments/create-checkout-session`, {
+    const response = await fetch(`${runtimeConfig.public.apiBase}payments/create-checkout-session`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         productName: course.value.title,
         price: course.value.Price,
         quantity: 1,
-        email: email.value, // Include email
-        name: name.value,   // Include name
-        course_id: course_id.value, // Use course_id.value
-        successUrl: "https://o-dots.com/payments/success?session_id={CHECKOUT_SESSION_ID}",
-        failUrl: "https://o-dots.com/payments/fail",
+        email: localStorage.getItem('userEmail'),
+        name: localStorage.getItem('userName'),
+        course_id: course.value._id,
+        successUrl: `${window.location.origin}/payments/success?session_id={CHECKOUT_SESSION_ID}`,
+        failUrl: `${window.location.origin}/payments/fail`
       })
     });
 
-    const checkoutSessionData = await checkoutResponse.json();
-    if (!checkoutSessionData.id) {
-      throw new Error('No session ID returned from API');
-    }
-
-    console.log('Checkout session created:', checkoutSessionData); // Log the checkout session data
-
+    const session = await response.json();
     const stripe = await loadStripe(runtimeConfig.public.stripePubishKey);
-    await stripe.redirectToCheckout({ sessionId: checkoutSessionData.id });
+    await stripe.redirectToCheckout({ sessionId: session.id });
   } catch (error) {
     console.error('Error redirecting to Stripe:', error);
   }
 };
 
-const watchItNow = () => {
-  router.push(`/courses/${course.value._id}/watch`);
-};
-
-const fetchCourse = async () => {
-  const courseId = route.params.id;
-
-  try {
-    const response = await fetch(`${runtimeConfig.public.apiBase}courses/${courseId}`);
-    if (!response.ok) {
-      throw new Error(`Error fetching course details: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    course.value = data;
-    console.log('Fetched course data:', course.value); // Log the course data
-  } catch (error) {
-    console.error('Error fetching course details:', error);
-    course.value = null;
-  }
-};
-
 onMounted(async () => {
-  await fetchUserProfile();
-  await fetchCourse();
+  try {
+    const response = await fetch(`${runtimeConfig.public.apiBase}courses/${route.params.id}`);
+    if (!response.ok) throw new Error('Failed to fetch course');
+    course.value = await response.json();
+
+    if (course.value.tutor?.userIcon) {
+      tutorIcon.value = course.value.tutor.userIcon;
+    }
+
+    // Check if course is in wishlist
+    const wishlist = JSON.parse(localStorage.getItem('courseWishlist') || '[]');
+    isInWishlist.value = wishlist.includes(course.value._id);
+  } catch (error) {
+    console.error('Error fetching course:', error);
+  }
 });
 </script>
 
-
-
 <style scoped>
-.coursedetailswhole{
-    display: flex;
-    background-color: black;
-    margin-top: 17vh;
-    padding: 0px 5%;
-    width: 100%;
+.course-details {
+  min-height: 100vh;
+  background: #f8f9fa;
 }
-.course-container {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-    border: 1px dotted white;
-    color: white;
-    flex-direction: row;
-    width: 150vh;
-    overflow: hidden;
-    height: 150vh;
-}
-.course-left{
-    flex: 2;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    box-sizing: border-box;
-    padding: 1em;
-    border: 1px dotted white;
-    width: 50%;
-    overflow: hidden;
-    height: 157%;
-}
-.coursedescription {
-  padding: 4px;
-  border: 1px dotted white;
-  font-size: 1em;
+
+.hero-section {
   position: relative;
-  overflow-y: auto;
-  margin: 5px 0%;
-  flex:1;
-  height: 275%;
+  height: 500px;
+  background-size: cover;
+  background-position: center;
+  color: white;
+  margin-top: 60px;
 }
-.course-right {
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.8));
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
+}
+
+.course-info {
+  max-width: 800px;
+}
+
+.course-categories {
+  margin-bottom: 20px;
+}
+
+.category-tag {
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 20px;
+  margin-right: 10px;
+  font-size: 14px;
+}
+
+.course-title {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 30px;
+  line-height: 1.2;
+}
+
+.course-meta {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.tutor-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tutor-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.course-stats {
+  display: flex;
+  gap: 20px;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.main-content {
+  padding: 60px 0;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 40px;
+}
+
+.content-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.content-section h2 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.description {
+  line-height: 1.8;
+  color: #666;
+}
+
+.learning-outcomes {
+  margin-top: 1rem;
+  line-height: 1.6;
+  color: #666;
+}
+
+.curriculum-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.curriculum-item {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.item-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.item-number {
+  width: 24px;
+  height: 24px;
+  background: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #666;
+}
+
+.item-title {
   flex: 1;
+  font-weight: 500;
+}
+
+.item-duration {
+  color: #666;
+  font-size: 14px;
+}
+
+.item-description {
+  color: #666;
+  font-size: 14px;
+  margin-left: 39px;
+}
+
+.sidebar-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 80px;
+}
+
+.preview-video,
+.preview-image {
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
+}
+
+.preview-video iframe,
+.preview-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.price-section {
+  padding: 30px;
+  border-bottom: 1px solid #eee;
+}
+
+.price {
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.currency {
+  font-size: 24px;
+  margin-right: 5px;
+}
+
+.price-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-primary,
+.btn-secondary {
+  width: 100%;
+  padding: 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #4CAF50;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #43a047;
+}
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid #ffffff;
+  color: #ffffff;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.course-highlights {
+  padding: 30px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  text-align: center;
+}
+
+.highlight-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 1em;
-  border: 1px dotted white;
-  justify-content: flex-start;
-  padding-top: 5%;
-  text-align: center;
+  gap: 10px;
 }
-.course-details {
-  border: 1px solid #ddd;
-  padding: 20px;
-  margin-bottom: 20px;
-  font-size: 1em;
+
+.highlight-item i {
+  font-size: 24px;
+  color: #666;
 }
-.course-info {
+
+.highlight-info {
   display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-}
-.course-photo {
-  max-width: 50%;
-  height: auto;
-}
-.mediawrapper{
-    margin-top: 10px;
-    aspect-ratio: 16 / 9;
-    width: 100%;
-    overflow: hidden;
-    border: 1px solid #ddd;
-    height: 487px;
-}
-.categories {
-  display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 5px;
 }
-.category {
-  padding: 2px 8px;
-  background-color: rgba(237, 48, 48, 0.6);
-  border-radius: 1em;
-  font-size: 0.8em;
-}
-button {
-  padding: 10px 20px;
-  margin-top: 20px;
-  background-color: #d9d927e0;
-  color: white;
-  cursor: pointer;
-  font-size:1em;
-  border-radius:5px;
-}
-button:hover {
-  background-color:#F2F5D2;
-  color:black;
-  border:white;
-}
-.addedlayer {
-  width: 85%;
-}
-.course-left h3{
-  text-align: center;
-    color: #d9d927e0;
-    font-size: 1.3em;
+
+.highlight-value {
+  font-weight: 600;
+  color: #333;
 }
 
-@media(max-width:600px){
-  .coursedetailswhole{
-    display: flex;
-    background-color: black;
-    margin-top: 17vh;
-    width: 100%;
+.highlight-label {
+  font-size: 12px;
+  color: #666;
 }
-.course-container{
-    display: flex;
-    justify-content: center;
-    padding: 3px;
-    border: 1px dotted white;
-    color: white;
-    flex-direction: row;
-    width: 100%;
-    overflow: hidden;
-    height: 73vh;
-}
-.course-left{
-    flex: 6;
-    display: flex;
+
+@media (max-width: 768px) {
+  .hero-section {
+    height: 400px;
+    margin-top: 50px;
+  }
+
+  .course-title {
+    font-size: 32px;
+  }
+
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .course-meta {
     flex-direction: column;
-    gap: 5px;
-    box-sizing: border-box;
-    padding: 1em;
-    border: 1px dotted white;
-    width: 50%;
-    overflow: hidden;
-    height: 73vh;
-}
-.course-right h3{
-  font-size:1em;
-}
-.mediawrapper{
-    margin-top: 10px;
-    aspect-ratio: 16 / 9;
-    width: 100%;
-    overflow: hidden;
-    border: 1px solid #ddd;
-    height: 150px;
-    flex: 4;
-}
-.course-left h3{
-    font-size: 1em;
-    color:#d9d927e0;
-    text-align:center;
-}
-.course-info{
-    font-size: 0.8em;
-}
-.toname{
+    align-items: flex-start;
+    gap: 15px;
+  }
 
-    height: 40%;
-}
-.toname p{
-  font-size: 0.8em;
-}
-.coursedescription{
-    padding: 4px;
-    border: 1px dotted white;
-    font-size: 0.8em;
-    height: 57%;
-    position: relative;
-    overflow-y: auto;
-    margin: 5px 0%;
-    overflow-x: hidden;
-}
-button {
-  font-size:0.8em;
-}
+  .sidebar-card {
+    position: static;
+  }
 }
 </style>
-
-

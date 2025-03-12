@@ -1,132 +1,331 @@
 <template>
-  <div>
-    <h1>Add a New Course</h1>
-    <form @submit.prevent="submitCourse">
-      <div>
-        <cleanheader />
-        <label for="title">Course Title:</label>
-        <input type="text" id="title" v-model="course.title" required>
+  <div class="course-creation">
+    <Cleanheader />
+    <div class="main-container">
+      <div class="form-wrapper">
+        <h1 class="page-title">Create New Course</h1>
+        
+        <form @submit.prevent="submitCourse" class="course-form">
+          <!-- Basic Information Section -->
+          <section class="form-section">
+            <h2>Basic Information</h2>
+            
+            <div class="form-group">
+              <label>Course Title</label>
+              <input type="text" v-model="course.title" required>
+            </div>
+
+            <div class="form-group">
+              <label>Categories</label>
+              <select v-model="course.categories" multiple required class="category-select">
+                <option v-for="category in availableCategories" :key="category" :value="category">
+                  {{ category }}
+                </option>
+              </select>
+              <small v-if="!course.categories.length" class="error-text">
+                Please select at least one category
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label>Course Description</label>
+              <textarea 
+                v-model="course.description" 
+                rows="6" 
+                placeholder="Provide a detailed description of your course..."
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>What Students Will Learn</label>
+              <textarea 
+                v-model="course.learningOutcomes" 
+                rows="4" 
+                placeholder="List the key learning outcomes and skills students will gain..."
+                required
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label>Learning Modes</label>
+              <div class="learning-modes">
+                <label v-for="mode in learningModes" :key="mode" class="mode-checkbox">
+                  <input 
+                    type="checkbox" 
+                    :value="mode" 
+                    v-model="course.learningModes"
+                  >
+                  <span>{{ mode }}</span>
+                </label>
+              </div>
+              <small v-if="!course.learningModes.length" class="error-text">
+                Please select at least one learning mode
+              </small>
+            </div>
+
+            <div class="form-group">
+              <label>Course Duration (hours)</label>
+              <input 
+                type="number" 
+                v-model="course.duration" 
+                min="1" 
+                step="0.5"
+                required
+              >
+            </div>
+
+            <div class="form-group">
+              <label>Course Price (in $)</label>
+              <input type="number" v-model="course.Price" min="0" step="0.01" required>
+            </div>
+
+            <div class="form-group">
+              <label>Promotion Video URL</label>
+              <input type="text" v-model="course.promotionUrl" placeholder="Enter video embed URL">
+              <small>Paste the embed URL from YouTube, Vimeo, etc. <a>Upload Guide</a></small>
+            </div>
+
+            <div class="form-group">
+              <label>
+                <input type="checkbox" v-model="course.isCrowdfunding">
+                This is a crowdfunding course
+              </label>
+            </div>
+
+            <div v-if="course.isCrowdfunding" class="crowdfunding-section">
+              <div class="form-group">
+                <label>Minimum Number of Students</label>
+                <input type="number" v-model="course.crowdfunding.minStudents" min="1" required>
+              </div>
+
+              <div class="form-group">
+                <label>Expected Start Date</label>
+                <input type="date" v-model="course.crowdfunding.startDate" :min="minDate" required>
+              </div>
+
+              <div class="form-group">
+                <label>Startup Fee ($)</label>
+                <input type="number" v-model="course.crowdfunding.startupFee" min="0" step="0.01" required>
+              </div>
+            </div>
+          </section>
+
+          <!-- Course Content -->
+          <section class="form-section">
+            <h2>Course Content</h2>
+            <div class="videos-container">
+              <div v-for="(video, index) in course.videos" :key="index" class="video-item">
+                <div class="video-header">
+                  <h3>Video {{ index + 1 }}</h3>
+                  <button type="button" @click="removeVideo(index)" class="remove-btn">Remove</button>
+                </div>
+                
+                <div class="video-form">
+                  <input type="text" v-model="video.name" placeholder="Video Title" required>
+                  <input type="text" v-model="video.url" placeholder="Video Embed URL" required>
+                  <textarea 
+                    v-model="video.tutorremarks" 
+                    placeholder="Add notes or remarks for this video"
+                    rows="3"
+                  ></textarea>
+                </div>
+              </div>
+              
+              <button type="button" @click="addVideo" class="add-video-btn">
+                + Add New Video
+              </button>
+            </div>
+          </section>
+
+          <!-- Course Media -->
+          <section class="form-section">
+            <h2>Course Thumbnail</h2>
+            <div class="media-upload">
+              <div class="thumbnail-preview">
+                <img 
+                  :src="photoPreview || '/public/picture/addblack2.png'" 
+                  @click="openFileDialog" 
+                  alt="Course Thumbnail"
+                >
+                <input 
+                  type="file" 
+                  ref="fileInput" 
+                  @change="onFileChange" 
+                  accept="image/*" 
+                  style="display:none"
+                >
+              </div>
+              <div class="upload-controls">
+                <p v-if="uploading">Uploading...</p>
+                <button 
+                  type="button" 
+                  @click="removePhoto" 
+                  v-if="photoPreview" 
+                  class="remove-btn"
+                >
+                  Remove Photo
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Submit Section -->
+          <section class="form-actions">
+            <button type="submit" class="submit-btn" :disabled="!isFormValid">Create Course</button>
+            <button type="button" @click="$router.push('/courses')" class="cancel-btn">Cancel</button>
+          </section>
+        </form>
       </div>
-      <div>
-        <label for="promotionUrl">Promotion Embed Link:</label>
-        <textarea id="promotionUrl" v-model="course.promotionUrl" @blur="extractPromotionSrc"></textarea>
-        <input type="file" @change="onPromotionFileChange" accept="video/mp4,video/mov">
-      </div>
-      <div>
-        <label for="categories">Categories:</label>
-        <select v-model="categoriesInput" @blur="addCategory">
-          <option>Interior Design</option>
-          <option>Creative Writing</option>
-          <option>Marketing</option>
-          <option>Design</option>
-        </select>
-        <ul>
-          <li v-for="(category, index) in course.categories" :key="index">
-          </li>
-        </ul>
-      </div>
-      <div>
-        <label for="description">Description:</label>
-        <textarea id="description" v-model="course.description" required></textarea>
-      </div>
-      <div>
-        <label for="photos">Photo URL:</label>
-        <div class="image-preview">
-          <img :src="photoPreview || '/path/to/default-image.jpg'" @click="openFileDialog" width="250" height="250" alt="Course Photo" style="cursor: pointer;" />
-          <input type="file" ref="fileInput" @change="onFileChange" style="display:none;">
-          <div class="upload-controls">
-            <p v-if="uploading">Uploading...</p>
-            <button type="button" @click="removePhoto" v-if="photoPreview">Remove Photo</button>
-          </div>
-        </div>
-      </div>
-      <div>
-        <label for="Price">Price (in $):</label>
-        <input type="number" id="Price" v-model="course.Price">
-      </div>
-      <div>
-        <label>Videos:</label>
-        <div v-for="(video, index) in course.videos" :key="index">
-          <input type="text" placeholder="Video Name" v-model="video.name" required>
-          <input type="text" placeholder="Video Embed Link" v-model="video.url" required>
-          <input type="file" @change="onVideoFileChange(index)" accept="video/mp4,video/mov">
-          <input type="text" placeholder="Tutor Remarks" v-model="video.tutorremarks">
-          <button type="button" @click="removeVideo(index)">Remove Video</button>
-        </div>
-        <button type="button" @click="addVideo">Add Video</button>
-      </div>
-      <button type="submit">Save Course</button>
-    </form>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useRuntimeConfig } from '#imports';
 
-const course = ref({ title: '', promotionUrl: '', categories: [], description: '', photos: '', Price: null, videos: [], tutor: '' });
-const categoriesInput = ref('');
+const availableCategories = [
+  'Interior Design',
+  'Creative Writing',
+  'Marketing',
+  'Design',
+  'Technology',
+  'Business'
+];
+
+const learningModes = [
+  'Video',
+  'Audio/Podcast',
+  'Reading materials/article/e-book',
+  'Seminar/live streaming/Q&A',
+  'Other'
+];
+
+const minDate = computed(() => {
+  const today = new Date();
+  today.setDate(today.getDate() + 1);
+  return today.toISOString().split('T')[0];
+});
+
+const user = ref(null);
+const course = ref({
+  title: '',
+  promotionUrl: '',
+  categories: [],
+  description: '',
+  learningOutcomes: '',
+  duration: null,
+  photos: '',
+  Price: null,
+  videos: [],
+  learningModes: [],
+  isCrowdfunding: false,
+  crowdfunding: {
+    minStudents: null,
+    startDate: '',
+    startupFee: null
+  }
+});
+
+const isFormValid = computed(() => {
+  return course.value.title &&
+         course.value.categories.length > 0 &&
+         course.value.description &&
+         course.value.learningOutcomes &&
+         course.value.duration > 0 &&
+         course.value.learningModes.length > 0 &&
+         (!course.value.isCrowdfunding || (
+           course.value.crowdfunding.minStudents > 0 &&
+           course.value.crowdfunding.startDate &&
+           course.value.crowdfunding.startupFee >= 0
+         ));
+});
+
 const photoPreview = ref(null);
 const uploading = ref(false);
 const fileInput = ref(null);
 const router = useRouter();
 const runtimeConfig = useRuntimeConfig();
-const user = getUser();
 
-const extractSrc = (embedLink) => {
-  const match = embedLink.match(/src\s*=\\s*"([^"]+)"/);
-  return match ? match[1] : embedLink;
-};
-
-const extractPromotionSrc = () => {
-  course.value.promotionUrl = extractSrc(course.value.promotionUrl);
-};
-
-const extractVideoSrc = (index) => {
-  course.value.videos[index].url = extractSrc(course.value.videos[index].url);
-};
-
-const addCategory = () => {
-  if (categoriesInput.value && !course.value.categories.includes(categoriesInput.value)) {
-    course.value.categories.push(categoriesInput.value);
-    categoriesInput.value = '';
+const fetchUserData = async () => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${runtimeConfig.public.apiBase}auth/profile`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    const data = await response.json();
+    user.value = data.user;
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    router.push('/users/signin');
   }
 };
 
-const removeCategory = (index) => {
-  course.value.categories.splice(index, 1);
+const extractSrc = (embedCode) => {
+  if (!embedCode) return '';
+  const match = embedCode.match(/src=["'](.*?)["']/);
+  return match ? match[1] : embedCode;
 };
 
-const removePhoto = () => {
-  course.value.photos = '';
-  photoPreview.value = null;
+watch(() => course.value.promotionUrl, (newValue) => {
+  if (newValue) {
+    course.value.promotionUrl = extractSrc(newValue);
+  }
+});
+
+watch(() => course.value.videos, (newVideos) => {
+  newVideos.forEach(video => {
+    if (video.url) {
+      video.url = extractSrc(video.url);
+    }
+  });
+}, { deep: true });
+
+const addVideo = () => {
+  course.value.videos.push({
+    name: '',
+    url: '',
+    tutorremarks: ''
+  });
 };
 
-const validateFile = (file, allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/quicktime'], maxSizeInMB = 15) => {
-  if (!allowedTypes.includes(file.type)) {
-    alert('Invalid file type -- only JPEG, PNG, GIF images, Mov or MP4 videos are allowed');
+const removeVideo = (index) => {
+  course.value.videos.splice(index, 1);
+};
+
+const validateFile = (file) => {
+  const allowedFileTypes = ['image/jpeg', 'image/png', 'image/gif'];
+  if (!allowedFileTypes.includes(file.type)) {
+    alert('Invalid file type. Only JPEG, PNG, and GIF images are allowed.');
     return false;
   }
+
+  const maxSizeInMB = 2;
   const maxSizeInBytes = maxSizeInMB * 1024 * 1024;
   if (file.size > maxSizeInBytes) {
-    alert(`Exceed the maximum file size. Max. size: ${maxSizeInMB} MB`);
+    alert(`File size exceeds the maximum limit of ${maxSizeInMB} MB.`);
     return false;
   }
+
   return true;
 };
 
 const uploadImage = async (file) => {
   const formData = new FormData();
   formData.append('image', file);
+
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:1337/api/posts/imageupload', {
-      method: "POST",
+    const response = await fetch(`${runtimeConfig.public.apiBase}courses/imageupload`, {
+      method: 'POST',
       body: formData,
       headers: {
-        "Authorization": `Bearer ${token}`
-      }
+        'Authorization': `Bearer ${token}`,
+      },
     });
     const data = await response.json();
     if (!response.ok) {
@@ -139,32 +338,10 @@ const uploadImage = async (file) => {
   }
 };
 
-const uploadFile = async (file, endpoint) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  try {
-    const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:1337/api/posts/imageupload`, {
-      method: "POST",
-      body: formData,
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.message);
-    }
-    return data.url;
-  } catch (error) {
-    console.error(`Error uploading ${endpoint}:`, error);
-    return null;
-  }
-};
-
 const onFileChange = async (event) => {
   const file = event.target.files[0];
   if (!file) return;
+
   if (validateFile(file)) {
     uploading.value = true;
     const imageUrl = await uploadImage(file);
@@ -180,99 +357,331 @@ const openFileDialog = () => {
   fileInput.value.click();
 };
 
-const onPromotionFileChange = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (validateFile(file, ['video/mp4'], 100)) {
-    const videoUrl = await uploadFile(file, 'videoupload');
-    if (videoUrl) {
-      course.value.promotionUrl = videoUrl;
-    }
-  }
-};
-
-const addVideo = () => {
-  course.value.videos.push({ name: '', url: '', tutorremarks: '', fileName: '' });
-};
-
-const removeVideo = (index) => {
-  course.value.videos.splice(index, 1);
-};
-
-const getTutorId = () => {
-  return '606c6f5c8e2e2b0728fcbfc9';
+const removePhoto = () => {
+  course.value.photos = '';
+  photoPreview.value = null;
 };
 
 const submitCourse = async () => {
-  course.value.tutor = getTutorId();
   try {
-    console.log('Submitting course:', course.value);
-    const response = await fetch(`${runtimeConfig.public.apiBase}/courses`, {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to create a course');
+      return;
+    }
+
+    if (!user.value) {
+      alert('User data not available');
+      return;
+    }
+
+    // Validate required fields
+    if (!course.value.title || !course.value.description || !course.value.categories.length || !course.value.learningModes.length) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // Validate crowdfunding fields if applicable
+    if (course.value.isCrowdfunding) {
+      if (!course.value.crowdfunding.minStudents || !course.value.crowdfunding.startDate || !course.value.crowdfunding.startupFee) {
+        alert('Please fill in all crowdfunding fields');
+        return;
+      }
+    }
+
+    // Add tutor information from user data
+    const courseData = {
+      ...course.value,
+      tutor: user.value._id // Set the tutor field to the user's ID
+    };
+
+    const response = await fetch(`${runtimeConfig.public.apiBase}courses`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        "Authorization": "Bearer " + user?.accessToken
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({ ...course.value, Price: course.value.Price * 100 })
+      body: JSON.stringify(courseData)
     });
+
     if (!response.ok) {
-      throw new Error('Failed to add course');
+      const error = await response.json();
+      throw new Error(error.message || 'Failed to create course');
     }
+
     const data = await response.json();
-    console.log('Course added:', data);
-    await nextTick();
-    router.push(`/courses/${data._id}`);
+    alert('Course created successfully! It will be reviewed by an administrator.');
+    router.push('/courses/mycourses');
   } catch (error) {
-    console.error('Error adding course:', error);
+    console.error('Error creating course:', error);
+    alert(error.message || 'Failed to create course. Please try again.');
   }
 };
 
-// Reload data when component is mounted
-const reloadData = async () => {
-  await fetchCourse();
-};
-
-onMounted(() => {
-  nextTick().then(() => {
-    reloadData();
-  });
+onMounted(async () => {
+  await fetchUserData();
 });
 </script>
 
 <style scoped>
-form {
+.course-creation {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 2rem 0;
+}
+
+.main-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+.form-wrapper {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+.page-title {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.form-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.form-section h2 {
+  font-size: 1.5rem;
+  color: #444;
+  margin-bottom: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.category-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  min-height: 150px;
+}
+
+.learning-modes {
   display: flex;
   flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
 }
-form div {
-  margin-bottom: 10px;
-}
-form label {
-  font-weight: bold;
-}
-form input, form textarea {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-}
-form button {
-  padding: 10px 20px;
-  margin-top: 10px;
-}
-.upload-container {
+
+.mode-checkbox {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
 }
-.image-preview {
+
+.mode-checkbox input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.error-text {
+  color: #ff4444;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+textarea,
+select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #666;
+  outline: none;
+}
+
+.crowdfunding-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.videos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.video-item {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 1rem;
+}
+
+.video-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.video-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.add-video-btn {
+  padding: 1rem;
+  background: #f5f5f5;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.add-video-btn:hover {
+  background: #eee;
+  border-color: #ccc;
+}
+
+.media-upload {
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid #ddd;
-  padding: 10px;
+  gap: 1rem;
 }
-.upload-controls {
-  text-align: center;
-  margin-top: 10px;
+
+.thumbnail-preview {
+  width: 200px;
+  height: 200px;
+  border: 2px dashed #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.thumbnail-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.submit-btn,
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.submit-btn {
+  background: #4CAF50;
+  color: white;
+  border: none;
+}
+
+.submit-btn:hover {
+  background: #45a049;
+}
+
+.submit-btn:disabled {
+  background: #cccccc;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: white;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.cancel-btn:hover {
+  background: #f5f5f5;
+}
+
+.remove-btn {
+  padding: 0.5rem 1rem;
+  background: #ff4444;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.remove-btn:hover {
+  background: #ff0000;
+}
+
+.form-group textarea.learning-outcomes {
+  min-height: 120px;
+  font-size: 0.95rem;
+}
+
+.duration-input {
+  width: 150px;
+}
+
+@media (max-width: 768px) {
+  .main-container {
+    padding: 0 0.5rem;
+  }
+
+  .form-wrapper {
+    padding: 1rem;
+  }
+
+  .form-section {
+    padding: 1rem;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .submit-btn,
+  .cancel-btn {
+    width: 100%;
+  }
 }
 </style>

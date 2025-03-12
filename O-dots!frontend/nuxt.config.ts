@@ -34,7 +34,9 @@ export default defineNuxtConfig({
       stripeTestKey: process.env.STRIPE_TEST_KEY
     }
   },
+
   modules: ['@nuxtjs/google-fonts', '@nuxtjs/algolia'],
+
   googleFonts: {
     families: ['Roboto', 'Inter', 'Josefin+Sans', 'Lato', 'Raleway', 'Crimson Pro','Poppins','Dancing Script'],
   },
@@ -50,7 +52,6 @@ export default defineNuxtConfig({
 
   modules: ['nuxt-emoji-picker', // Add nuxt-swiper module here
   'nuxt-swiper', '@nuxtjs/google-fonts'],
-
 
   render: {
     csp: {
@@ -91,7 +92,6 @@ export default defineNuxtConfig({
     renderJsonPayloads: false,
   },
 
-
   router: {
     extendRoutes(routes, resolve) {
       routes.push({
@@ -109,5 +109,7 @@ export default defineNuxtConfig({
         component: resolve(__dirname, 'pages/404.vue'),
       });
     },
-  }
+  },
+
+  compatibilityDate: '2025-03-08'
 });
